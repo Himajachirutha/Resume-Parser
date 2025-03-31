@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto">
+    <div class="bg-white shadow rounded-lg p-6 mb-6">
+        <h2 class="text-2xl font-bold text-gray-800 mb-4">Welcome, {{ current_user.email }}!</h2>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="bg-gray-50 rounded-lg p-4">
+                <h3 class="text-lg font-semibold text-gray-700 mb-2">Subscription Status</h3>
+                <div class="space-y-2">
+                    <p class="text-sm text-gray-600">
+                        <span class="font-medium">Plan:</span> 
+                        <span class="capitalize">{{ current_user.subscription_type }}</span>
+                    </p>
+                    <p class="text-sm text-gray-600">
+                        <span class="font-medium">Status:</span> 
+                        <span class="capitalize">{{ current_user.subscription_status }}</span>
+                    </p>
+                    {% if current_user.subscription_end_date %}
+                    <p class="text-sm text-gray-600">
+                        <span class="font-medium">Renewal Date:</span> 
+                        {{ current_user.subscription_end_date.strftime('%Y-%m-%d') }}
+                    </p>
+                    {% endif %}
+                    {% if current_user.subscription_status != 'active' %}
+                    <a href="{{ url_for('subscription') }}" 
+                       class="inline-block mt-4 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+                        Upgrade Subscription
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="bg-gray-50 rounded-lg p-4">
+                <h3 class="text-lg font-semibold text-gray-700 mb-2">Quick Actions</h3>
+                <div class="space-y-2">
+                    <a href="{{ url_for('create_job') }}" 
+                       class="block px-4 py-2 bg-white border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50">
+                        Create New Job Posting
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-white shadow rounded-lg p-6">
+        <h3 class="text-xl font-bold text-gray-800 mb-4">Recent Job Postings</h3>
+        {% if jobs %}
+            <div class="space-y-4">
+                {% for job in jobs %}
+                <div class="border rounded-lg p-4 hover:bg-gray-50">
+                    <h4 class="text-lg font-semibold text-gray-800">{{ job.title }}</h4>
+                    <p class="text-sm text-gray-600">{{ job.description[:200] }}...</p>
+                    <div class="mt-2 flex justify-between items-center">
+                        <span class="text-sm text-gray-500">Posted: {{ job.created_at.strftime('%Y-%m-%d') }}</span>
+                        <div class="space-x-2">
+                            <a href="{{ url_for('view_shortlist', job_id=job.id) }}" 
+                               class="text-sm text-blue-600 hover:text-blue-800">
+                                View Shortlist
+                            </a>
+                            <form action="{{ url_for('upload_resumes', job_id=job.id) }}" method="post" enctype="multipart/form-data" class="inline">
+                                <input type="file" name="resumes" accept=".zip" class="hidden" id="resumes-{{ job.id }}" onchange="this.form.submit()">
+                                <label for="resumes-{{ job.id }}" class="text-sm text-green-600 hover:text-green-800 cursor-pointer">
+                                    Upload Resumes
+                                </label>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="text-gray-600">No job postings yet. Create your first job posting to get started!</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %} 

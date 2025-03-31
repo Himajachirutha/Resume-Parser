@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <div class="text-center">
+        <h1 class="text-3xl font-bold text-gray-900 sm:text-4xl">Choose Your Plan</h1>
+        <p class="mt-4 text-lg text-gray-600">Select the plan that best fits your needs</p>
+    </div>
+
+    <div class="mt-12 grid gap-8 lg:grid-cols-3">
+        <!-- Basic Plan -->
+        <div class="bg-white rounded-lg shadow-lg overflow-hidden">
+            <div class="px-6 py-8">
+                <h3 class="text-2xl font-bold text-gray-900">Basic</h3>
+                <p class="mt-4 text-gray-600">Perfect for small businesses</p>
+                <p class="mt-8">
+                    <span class="text-4xl font-bold text-gray-900">$29.99</span>
+                    <span class="text-gray-600">/month</span>
+                </p>
+                <ul class="mt-8 space-y-4">
+                    <li class="flex items-center">
+                        <svg class="h-5 w-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                        <span class="ml-3 text-gray-600">10 resumes per job posting</span>
+                    </li>
+                    <li class="flex items-center">
+                        <svg class="h-5 w-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                        <span class="ml-3 text-gray-600">Basic AI analysis</span>
+                    </li>
+                    <li class="flex items-center">
+                        <svg class="h-5 w-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                        <span class="ml-3 text-gray-600">Email support</span>
+                    </li>
+                </ul>
+                <a href="{{ url_for('payment', subscription_type='basic') }}" 
+                   class="mt-8 block w-full bg-blue-600 text-white text-center px-6 py-3 rounded-md hover:bg-blue-700">
+                    Get Started
+                </a>
+            </div>
+        </div>
+
+        <!-- Medium Plan -->
+        <div class="bg-white rounded-lg shadow-lg overflow-hidden border-2 border-blue-500">
+            <div class="px-6 py-8">
+                <h3 class="text-2xl font-bold text-gray-900">Medium</h3>
+                <p class="mt-4 text-gray-600">Ideal for growing companies</p>
+                <p class="mt-8">
+                    <span class="text-4xl font-bold text-gray-900">$49.99</span>
+                    <span class="text-gray-600">/month</span>
+                </p>
+                <ul class="mt-8 space-y-4">
+                    <li class="flex items-center">
+                        <svg class="h-5 w-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                        <span class="ml-3 text-gray-600">25 resumes per job posting</span>
+                    </li>
+                    <li class="flex items-center">
+                        <svg class="h-5 w-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                        <span class="ml-3 text-gray-600">Advanced AI analysis</span>
+                    </li>
+                    <li class="flex items-center">
+                        <svg class="h-5 w-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                        <span class="ml-3 text-gray-600">Priority email support</span>
+                    </li>
+                    <li class="flex items-center">
+                        <svg class="h-5 w-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                        <span class="ml-3 text-gray-600">Custom job templates</span>
+                    </li>
+                </ul>
+                <a href="{{ url_for('payment', subscription_type='medium') }}" 
+                   class="mt-8 block w-full bg-blue-600 text-white text-center px-6 py-3 rounded-md hover:bg-blue-700">
+                    Get Started
+                </a>
+            </div>
+        </div>
+
+        <!-- Premium Plan -->
+        <div class="bg-white rounded-lg shadow-lg overflow-hidden">
+            <div class="px-6 py-8">
+                <h3 class="text-2xl font-bold text-gray-900">Premium</h3>
+                <p class="mt-4 text-gray-600">For large organizations</p>
+                <p class="mt-8">
+                    <span class="text-4xl font-bold text-gray-900">$99.99</span>
+                    <span class="text-gray-600">/month</span>
+                </p>
+                <ul class="mt-8 space-y-4">
+                    <li class="flex items-center">
+                        <svg class="h-5 w-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                        <span class="ml-3 text-gray-600">Unlimited resumes</span>
+                    </li>
+                    <li class="flex items-center">
+                        <svg class="h-5 w-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                        <span class="ml-3 text-gray-600">Premium AI analysis</span>
+                    </li>
+                    <li class="flex items-center">
+                        <svg class="h-5 w-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                        <span class="ml-3 text-gray-600">24/7 phone support</span>
+                    </li>
+                    <li class="flex items-center">
+                        <svg class="h-5 w-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                        <span class="ml-3 text-gray-600">Advanced analytics</span>
+                    </li>
+                    <li class="flex items-center">
+                        <svg class="h-5 w-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                        <span class="ml-3 text-gray-600">API access</span>
+                    </li>
+                </ul>
+                <a href="{{ url_for('payment', subscription_type='premium') }}" 
+                   class="mt-8 block w-full bg-blue-600 text-white text-center px-6 py-3 rounded-md hover:bg-blue-700">
+                    Get Started
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 
