@@ -13,7 +13,7 @@ from flask_login import (LoginManager, UserMixin, current_user, login_required,
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import check_password_hash, generate_password_hash
 
-
+from utils.resume_processor import ResumeProcessor
 
 # Load environment variables
 load_dotenv()
@@ -29,6 +29,8 @@ login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
 
+# Initialize ResumeProcessor
+resume_processor = ResumeProcessor(os.environ.get('MISTRAL_API_KEY'))
 
 # Models
 class User(UserMixin, db.Model):
@@ -76,6 +78,16 @@ class Resume(db.Model):
             self.ai_insights = json.dumps(value)
         else:
             self.ai_insights = None
+
+class Payment(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    amount = db.Column(db.Float, nullable=False)
+    subscription_type = db.Column(db.String(20), nullable=False)
+    payment_id = db.Column(db.String(100), unique=True)
+    status = db.Column(db.String(20), default='pending')  # pending, completed, failed
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    user = db.relationship('User', backref=db.backref('payments', lazy=True))
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -136,6 +148,185 @@ def dashboard():
 def subscription():
     return render_template('subscription.html')
 
+@app.route('/payment/<subscription_type>', methods=['GET', 'POST'])
+@login_required
+def payment(subscription_type):
+    if subscription_type not in ['basic', 'medium', 'premium']:
+        flash('Invalid subscription type', 'error')
+        return redirect(url_for('subscription'))
+    
+    prices = {
+        'basic': 29.99,
+        'medium': 49.99,
+        'premium': 99.99
+    }
+    
+    if request.method == 'POST':
+        try:
+            # In a real application, you would validate the payment details here
+            # and process the payment through a payment gateway
+            
+            # Create a payment record
+            payment = Payment(
+                user_id=current_user.id,
+                amount=prices[subscription_type],
+                subscription_type=subscription_type,
+                payment_id=f"PAY-{int(time.time())}",  # Generate a unique payment ID
+                status='completed'
+            )
+            db.session.add(payment)
+            
+            # Update user's subscription status
+            current_user.subscription_type = subscription_type
+            current_user.subscription_status = 'active'
+            current_user.subscription_end_date = datetime.utcnow() + timedelta(days=30)
+            current_user.payment_id = payment.payment_id
+            current_user.payment_status = 'completed'
+            
+            db.session.commit()
+            
+            flash('Payment successful! Your subscription is now active.', 'success')
+            return redirect(url_for('dashboard'))
+            
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Error processing payment: {str(e)}', 'error')
+            return redirect(url_for('subscription'))
+    
+    return render_template('payment.html', 
+                         subscription_type=subscription_type,
+                         price=prices[subscription_type])
+
+@app.route('/create_job', methods=['GET', 'POST'])
+@login_required
+def create_job():
+    if current_user.subscription_status != 'active':
+        flash('Please subscribe to create job postings.', 'warning')
+        return redirect(url_for('subscription'))
+        
+    if request.method == 'POST':
+        title = request.form.get('title')
+        description = request.form.get('description')
+        required_skills = request.form.get('required_skills', '')  # Get required skills from form
+        experience = request.form.get('experience')
+        industry = request.form.get('industry')
+        
+        if not all([title, description, required_skills, experience, industry]):
+            flash('All fields are required.', 'error')
+            return redirect(url_for('create_job'))
+            
+        job = JobPosting(
+            title=title,
+            description=description,
+            required_skills=required_skills,  # Add required skills to job posting
+            experience=experience,
+            industry=industry,
+            user_id=current_user.id
+        )
+        
+        try:
+            db.session.add(job)
+            db.session.commit()
+            flash('Job posting created successfully!', 'success')
+            return redirect(url_for('dashboard'))
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Error creating job posting: {str(e)}', 'error')
+            return redirect(url_for('create_job'))
+            
+    return render_template('create_job.html')
+
+@app.route('/upload_resumes/<int:job_id>', methods=['POST'])
+@login_required
+def upload_resumes(job_id):
+    if current_user.subscription_status != 'active':
+        flash('Please subscribe to upload resumes.', 'error')
+        return redirect(url_for('subscription'))
+        
+    job = JobPosting.query.get_or_404(job_id)
+    
+    if job.user_id != current_user.id:
+        flash('You do not have permission to upload resumes for this job.', 'error')
+        return redirect(url_for('dashboard'))
+        
+    if 'resumes' not in request.files:
+        flash('No file selected', 'error')
+        return redirect(url_for('dashboard'))
+        
+    file = request.files['resumes']
+    if file.filename == '':
+        flash('No file selected', 'error')
+        return redirect(url_for('dashboard'))
+        
+    if not file.filename.endswith('.zip'):
+        flash('Please upload a ZIP file', 'error')
+        return redirect(url_for('dashboard'))
+        
+    try:
+        # Get resume limit based on subscription
+        resume_limit = {
+            'basic': 10,
+            'medium': 25,
+            'premium': float('inf')
+        }.get(current_user.subscription_type, 10)
+        
+        # Process the ZIP file
+        resumes = resume_processor.process_resumes(file, {
+            'title': job.title,
+            'skills': job.required_skills,
+            'experience': job.experience,
+            'industry': job.industry
+        })
+        
+        # Check if adding these resumes would exceed the limit
+        current_resume_count = Resume.query.filter_by(job_posting_id=job_id).count()
+        if current_resume_count + len(resumes) > resume_limit:
+            flash(f'Uploading these resumes would exceed your plan limit of {resume_limit} resumes per job.', 'error')
+            return redirect(url_for('dashboard'))
+            
+        # Save the resumes
+        for resume in resumes:
+            db_resume = Resume(
+                job_posting_id=job_id,
+                filename=resume['filename'],
+                file_path=resume['file_path'],
+                match_score=resume['match_score'],
+                ai_insights=json.dumps(resume['ai_insights'])
+            )
+            db.session.add(db_resume)
+            
+        db.session.commit()
+        flash(f'Successfully processed {len(resumes)} resumes!', 'success')
+        
+    except Exception as e:
+        flash(f'Error processing resumes: {str(e)}', 'error')
+        
+    return redirect(url_for('dashboard'))
+
+@app.route('/view_shortlist/<int:job_id>')
+@login_required
+def view_shortlist(job_id):
+    job = JobPosting.query.get_or_404(job_id)
+    if job.user_id != current_user.id:
+        flash('Unauthorized', 'error')
+        return redirect(url_for('dashboard'))
+    
+    resumes = Resume.query.filter_by(job_posting_id=job_id).order_by(Resume.match_score.desc()).all()
+    return render_template('view_shortlist.html', job=job, resumes=resumes)
+
+@app.route('/download_resume/<int:resume_id>')
+@login_required
+def download_resume(resume_id):
+    resume = Resume.query.get_or_404(resume_id)
+    if resume.job_posting.user_id != current_user.id:
+        flash('Unauthorized', 'error')
+        return redirect(url_for('dashboard'))
+    
+    return send_file(
+        resume.file_path,
+        as_attachment=True,
+        download_name=resume.filename
+    )
 
 if __name__ == '__main__':
     with app.app_context():
